@@ -1,0 +1,55 @@
+{
+    "sidebar": {
+        "chat": "채팅",
+        "newChat": "새 대화",
+        "cronTasks": "예약 작업",
+        "skills": "스킬",
+        "channels": "채널",
+        "dashboard": "대시보드",
+        "settings": "설정",
+        "devConsole": "개발자 콘솔"
+    },
+    "actions": {
+        "save": "저장",
+        "cancel": "취소",
+        "delete": "삭제",
+        "edit": "편집",
+        "refresh": "새로고침",
+        "close": "닫기",
+        "copy": "복사",
+        "search": "검색",
+        "confirm": "확인",
+        "dismiss": "닫기",
+        "load": "불러오기",
+        "install": "설치",
+        "uninstall": "제거",
+        "enable": "활성화",
+        "disable": "비활성화",
+        "back": "뒤로",
+        "next": "다음",
+        "skip": "건너뛰기",
+        "restart": "재시작",
+        "show": "표시",
+        "hide": "숨기기",
+        "clear": "초기화"
+    },
+    "status": {
+        "running": "실행 중",
+        "stopped": "중지됨",
+        "error": "오류",
+        "connected": "연결됨",
+        "disconnected": "연결 해제",
+        "enabled": "활성화됨",
+        "disabled": "비활성화됨",
+        "active": "활성",
+        "paused": "일시중지",
+        "configured": "설정 완료",
+        "loading": "불러오는 중...",
+        "saving": "저장 중..."
+    },
+    "gateway": {
+        "notRunning": "게이트웨이 중지됨",
+        "notRunningDesc": "이 기능을 사용하려면 OpenClaw 게이트웨이가 실행 중이어야 합니다. 자동으로 시작되거나 설정에서 시작할 수 있습니다.",
+        "warning": "게이트웨이가 실행되고 있지 않습니다."
+    }
+}

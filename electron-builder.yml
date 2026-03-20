@@ -1,0 +1,178 @@
+appId: app.clawlink.desktop
+productName: ClawLink
+copyright: Copyright © 2026 ClawLink
+compression: maximum
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist
+  - dist-electron
+  - package.json
+
+extraResources:
+  - from: resources/
+    to: resources/
+    filter:
+      - "**/*"
+      - "!icons/*.md"
+      - "!icons/*.svg"
+      - "!bin/**"
+      - "!screenshot/**"
+  # OpenClaw package (node_modules copied separately by afterPack hook
+  # because electron-builder respects .gitignore which excludes node_modules/)
+  - from: build/openclaw/
+    to: openclaw/
+  # NOTE: OpenClaw plugin mirrors (dingtalk, etc.) are bundled by the
+  # afterPack hook (after-pack.cjs) directly from node_modules, so they
+  # don't need an extraResources entry here.
+
+afterPack: ./scripts/after-pack.cjs
+
+asar: true
+asarUnpack:
+  - "**/*.node"
+
+# Disable native module rebuilding.
+# The Electron renderer/main process has no native (.node) dependencies.
+# All native modules (opus, sharp, koffi …) belong to openclaw, which is
+# bundled separately (bundle-openclaw.mjs → extraResources) and runs in its
+# own process — @electron/rebuild must NOT touch them.
+npmRebuild: false
+
+# Auto-update configuration
+publish:
+  - provider: github
+    owner: CN-Syndra
+    repo: ClawLink
+
+# macOS Configuration
+mac:
+  extraResources:
+    - from: resources/bin/darwin-${arch}
+      to: bin
+    - from: resources/cli/posix/
+      to: cli/
+  category: public.app-category.productivity
+  icon: resources/icons/icon.icns
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  darkModeSupport: true
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: entitlements.mac.plist
+  entitlementsInherit: entitlements.mac.plist
+  notarize: true
+  extendInfo:
+    NSMicrophoneUsageDescription: ClawLink requires microphone access for voice features
+    NSCameraUsageDescription: ClawLink requires camera access for video features
+
+dmg:
+  background: resources/dmg-background.png
+  icon: resources/icons/icon.icns
+  iconSize: 100
+  window:
+    width: 540
+    height: 380
+  contents:
+    - type: file
+      x: 130
+      y: 220
+    - type: link
+      path: /Applications
+      x: 410
+      y: 220
+
+# Windows Configuration
+win:
+  forceCodeSigning: false
+  verifyUpdateCodeSignature: false
+  signAndEditExecutable: true
+  extraResources:
+    - from: resources/bin/win32-${arch}
+      to: bin
+    - from: resources/cli/win32/
+      to: cli/
+  icon: resources/icons/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - arm64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  warningsAsErrors: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  differentialPackage: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: ClawLink
+  uninstallDisplayName: ClawLink
+  license: LICENSE
+  include: scripts/installer.nsh
+  installerIcon: resources/icons/icon.ico
+  uninstallerIcon: resources/icons/icon.ico
+
+# Linux Configuration
+linux:
+  extraResources:
+    - from: resources/bin/linux-${arch}
+      to: bin
+    - from: resources/cli/posix/
+      to: cli/
+  icon: resources/icons
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
+    - target: rpm
+      arch:
+        - x64
+  category: Utility
+  maintainer: ClawLink Team <public@valuecell.ai>
+  vendor: ClawLink
+  synopsis: AI Assistant powered by OpenClaw
+  description: ClawLink is a graphical AI assistant application that integrates with OpenClaw Gateway to provide intelligent automation and assistance across multiple messaging platforms.
+  desktop:
+    entry:
+      Name: ClawLink
+      Comment: AI Assistant powered by OpenClaw
+      Categories: Utility;Network;
+      Keywords: ai;assistant;automation;chat;
+      StartupWMClass: clawlink
+
+appImage:
+  license: LICENSE
+
+deb:
+  depends:
+    # Use OR syntax to support both Ubuntu 22.04 and Ubuntu 24.04 (t64 transition).
+    # Ubuntu 24.04 renamed many libraries with a t64 suffix (64-bit time_t ABI transition).
+    - libgtk-3-0 | libgtk-3-0t64
+    - libnotify4 | libnotify4t64
+    - libnss3
+    - libxss1 | libxss1t64
+    - libxtst6 | libxtst6t64
+    - xdg-utils
+    - libatspi2.0-0 | libatspi2.0-0t64
+    - libuuid1
+  afterInstall: scripts/linux/after-install.sh
+  afterRemove: scripts/linux/after-remove.sh

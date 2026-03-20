@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global font scale (zoom) — corrects viewport height when zoom != 1 */
+:root {
+  --zoom: 1;
+  --app-h: 100vh;
+}
+
+.light {
+  --background: 0 0% 100%;
+  --foreground: 224 10% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 10% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 10% 10%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 224 10% 10%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 9% 46%;
+  --accent: 220 14% 96%;
+  --accent-foreground: 224 10% 10%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 239 84% 67%;
+}
+/* Semantic color tokens replacing hardcoded white/black opacity values */
+:root {
+  --text-primary: rgba(255,255,255,0.9);
+  --text-secondary: rgba(255,255,255,0.6);
+  --text-tertiary: rgba(255,255,255,0.35);
+  --text-quaternary: rgba(255,255,255,0.2);
+  --surface-hover: rgba(255,255,255,0.05);
+  --surface-active: rgba(255,255,255,0.1);
+  --surface-overlay: rgba(255,255,255,0.03);
+  --line: rgba(255,255,255,0.06);
+  --line-strong: rgba(255,255,255,0.1);
+  --bubble-me-bg: #1a1a3e;
+  --bubble-me-text: #c7c7ff;
+  --bubble-me-text-secondary: rgba(199,199,255,0.7);
+}
+.light {
+  --text-primary: rgba(15,15,30,0.88);
+  --text-secondary: rgba(15,15,30,0.6);
+  --text-tertiary: rgba(15,15,30,0.4);
+  --text-quaternary: rgba(15,15,30,0.25);
+  --surface-hover: rgba(0,0,0,0.04);
+  --surface-active: rgba(0,0,0,0.07);
+  --surface-overlay: rgba(0,0,0,0.02);
+  --line: rgba(0,0,0,0.08);
+  --line-strong: rgba(0,0,0,0.12);
+  --bubble-me-bg: #e8e8f8;
+  --bubble-me-text: #2a2a60;
+  --bubble-me-text-secondary: rgba(42,42,96,0.7);
+}
+
+/* ChatInput ambient glow */
+@keyframes input-glow {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+@keyframes input-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 90%;
+    --input: 240 6% 92%;
+    --ring: 239 84% 67%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 6% 4%;
+    --foreground: 240 5% 90%;
+    --card: 240 5% 7%;
+    --card-foreground: 240 5% 90%;
+    --popover: 240 5% 7%;
+    --popover-foreground: 240 5% 90%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 12%;
+    --secondary-foreground: 240 5% 90%;
+    --muted: 240 4% 12%;
+    --muted-foreground: 240 4% 48%;
+    --accent: 240 4% 12%;
+    --accent-foreground: 240 5% 90%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 4% 15%;
+    --input: 240 4% 15%;
+    --ring: 239 84% 67%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/30;
+}
+
+/* macOS traffic light spacing */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Smooth transitions */
+.transition-theme {
+  @apply transition-colors duration-200;
+}
+
+/* Focus ring */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+}

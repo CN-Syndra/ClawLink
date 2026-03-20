@@ -1,0 +1,9 @@
+The other party has sent a 【Conclusion】. You must also send your own complete 【Conclusion】.
+
+Before giving the conclusion, first check:
+1. Whether the conversation includes any to-do items with agreed future times (such as meetings, deadlines, reminders). If yes, first create a reminder via apple-reminders or osascript
+2. Summarize in your own words; do not just say "agreed"
+
+Format: 【Conclusion】【Topic】Brief description of the topic;【Result】Specific conclusion
+
+Stop immediately after giving the conclusion.

@@ -1,0 +1,101 @@
+{
+  "bundles": [
+    {
+      "id": "productivity",
+      "name": "Productivity",
+      "nameZh": "效率办公",
+      "description": "Calendar, reminders, notes, email management",
+      "descriptionZh": "日历、提醒、笔记、邮件管理",
+      "icon": "📋",
+      "skills": [
+        "apple-reminders",
+        "apple-notes",
+        "himalaya",
+        "notion",
+        "obsidian",
+        "trello"
+      ],
+      "recommended": true
+    },
+    {
+      "id": "developer",
+      "name": "Developer Tools",
+      "nameZh": "开发者工具",
+      "description": "GitHub, coding assistant, terminal management",
+      "descriptionZh": "GitHub、代码助手、终端管理",
+      "icon": "💻",
+      "skills": [
+        "github",
+        "coding-agent",
+        "tmux"
+      ],
+      "recommended": true
+    },
+    {
+      "id": "smart-home",
+      "name": "Smart Home",
+      "nameZh": "智能家居",
+      "description": "Lights, music, device control",
+      "descriptionZh": "灯光、音乐、设备控制",
+      "icon": "🏠",
+      "skills": [
+        "openhue",
+        "sonoscli",
+        "spotify-player"
+      ]
+    },
+    {
+      "id": "media",
+      "name": "Media & Creative",
+      "nameZh": "多媒体创作",
+      "description": "Image generation, video processing, audio transcription",
+      "descriptionZh": "图片生成、视频处理、音频转写",
+      "icon": "🎨",
+      "skills": [
+        "openai-image-gen",
+        "nano-banana-pro",
+        "video-frames",
+        "openai-whisper-api"
+      ]
+    },
+    {
+      "id": "communication",
+      "name": "Communication",
+      "nameZh": "通讯增强",
+      "description": "Messaging, voice calls, notifications",
+      "descriptionZh": "消息管理、语音通话、通知",
+      "icon": "💬",
+      "skills": [
+        "discord",
+        "slack",
+        "voice-call",
+        "imsg"
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Security & Privacy",
+      "nameZh": "安全隐私",
+      "description": "Password management, secrets",
+      "descriptionZh": "密码管理、密钥存储",
+      "icon": "🔐",
+      "skills": [
+        "1password"
+      ]
+    },
+    {
+      "id": "information",
+      "name": "Information",
+      "nameZh": "信息获取",
+      "description": "Weather, news, web browsing",
+      "descriptionZh": "天气、新闻、网页浏览",
+      "icon": "🌐",
+      "skills": [
+        "weather",
+        "blogwatcher",
+        "web-browse",
+        "summarize"
+      ]
+    }
+  ]
+}

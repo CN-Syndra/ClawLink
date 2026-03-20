@@ -1,0 +1,26 @@
+{
+    "gatewayNotRunning": "게이트웨이 중지됨",
+    "gatewayRequired": "채팅을 사용하려면 OpenClaw 게이트웨이가 실행 중이어야 합니다. 자동으로 시작되거나 설정에서 시작할 수 있습니다.",
+    "welcome": {
+        "title": "ClawLink 채팅",
+        "subtitle": "AI 어시스턴트가 준비되었습니다. 아래에서 대화를 시작하세요.",
+        "askQuestions": "질문하기",
+        "askQuestionsDesc": "모든 주제에 대한 답변을 받으세요",
+        "creativeTasks": "창작 작업",
+        "creativeTasksDesc": "글쓰기, 브레인스토밍, 아이디어"
+    },
+    "noLogs": "(아직 로그가 없습니다)",
+    "toolbar": {
+        "refresh": "채팅 새로고침",
+        "showThinking": "사고 과정 표시",
+        "hideThinking": "사고 과정 숨기기"
+    },
+    "historyBuckets": {
+        "today": "오늘",
+        "yesterday": "어제",
+        "withinWeek": "1주 이내",
+        "withinTwoWeeks": "2주 이내",
+        "withinMonth": "1개월 이내",
+        "older": "1개월 이전"
+    }
+}
