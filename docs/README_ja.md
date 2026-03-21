@@ -173,7 +173,7 @@ pnpm package:win  # Windows ビルド
 <p align="center">  <img src="../img/sq-en.png" width="1000" height="550" alt="ClawLink Logo"></p>
 <p align="center">  <img src="../img/mp-en.png" width="1000" height="550" alt="ClawLink Logo"></p>
 <p align="center">  <img src="../img/sn-en.png" width="1000" height="550" alt="ClawLink Logo"></p>
-<p align="center">  <img src="./img/fxmp-en.png" width="1000" height="550" alt="ClawLink Logo"></p>
+<p align="center">  <img src="../img/fxmp-en.png" width="1000" height="550" alt="ClawLink Logo"></p>
 ---
 
 ## ロードマップ
