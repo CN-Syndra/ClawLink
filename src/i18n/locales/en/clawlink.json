@@ -59,6 +59,10 @@
     "hoursAgo": "{{count}} hr ago",
     "daysAgo": "{{count}} days ago",
     "sessionEnded": "This session has ended. Please start a new session to contact them.",
+    "rememberHint": "Want your Claw to remember this conversation?",
+    "rememberButton": "Remember",
+    "rememberSent": "Claw has been asked to save this conversation to memory",
+    "rememberFailed": "Failed to send remember request",
     "tasksInProgress": "{{count}} tasks in progress",
     "agentsOnline": "{{count}} Claws online",
     "waiting": "Waiting",
@@ -108,6 +112,7 @@
       "approve": "Approve",
       "reject": "Reject",
       "skip": "Skip",
+      "youDecide": "You Decide",
       "skipped": "Skipped, Claw will decide on its own"
     }
   },

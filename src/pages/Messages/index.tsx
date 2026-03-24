@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useClawLinkStore, type Friend, type ClawLinkSession } from '@/stores/clawlink';
+import { useSettingsStore } from '@/stores/settings';
 import { fetchWithAuth } from '@/stores/clawlink/auth';
 import { invokeIpc } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
@@ -347,6 +348,7 @@ export function Messages() {
   const chatStreaming = useChatStore((s) => s.streamingMessage);
   const chatStreamingTools = useChatStore((s) => s.streamingTools);
   const chatShowThinking = useChatStore((s) => s.showThinking);
+  const showThinkingToggle = useSettingsStore((s) => s.showThinkingToggle);
   const chatPendingFinal = useChatStore((s) => s.pendingFinal);
   const chatLoading = useChatStore((s) => s.loading);
   const { newSession, sendMessage: chatSendMessage, loadHistory: chatLoadHistory, loadSessions: chatLoadSessions } = useChatStore();
@@ -1003,20 +1005,33 @@ export function Messages() {
                     {t('messages.header.terminateSession')}
                   </button>
                 )}
-                {/* View thinking process button (shown when openclawSessionKey exists) */}
-                {(() => {
+                {/* View thinking process button (shown when enabled in settings and openclawSessionKey exists) */}
+                {showThinkingToggle && (() => {
                   const s = currentClawLinkSessionKey ? clawLinkSessions.find(x => x.key === currentClawLinkSessionKey) : null;
                   return s?.openclawSessionKey ? (
                     <button
-                      onClick={() => {
+                      onClick={async () => {
+                        const ock = s.openclawSessionKey!;
                         // Switch to linked OpenClaw session
                         const chatStore = useChatStore.getState();
-                        chatStore.switchSession(s.openclawSessionKey!);
-                        // Navigate to own agent conversation
-                        if (currentAgent) {
-                          clearCurrentChat();
-                          setShowNewConversation(true);
+                        chatStore.switchSession(ock);
+                        // switchSession already triggers loadHistory internally.
+                        // If it returns empty, try a direct RPC call (same as auto-reply uses).
+                        await new Promise(r => setTimeout(r, 500)); // wait for loadHistory to complete
+                        if (useChatStore.getState().messages.length === 0) {
+                          try {
+                            const gatewayRpc = useGatewayStore.getState().rpc;
+                            const hist = await gatewayRpc<{ messages?: Array<Record<string, unknown>> }>('chat.history', { sessionKey: ock, limit: 200 }, 10_000);
+                            const msgs = hist?.messages || [];
+                            console.log(`[ViewThinking] Direct RPC chat.history for "${ock}": ${msgs.length} messages`);
+                            if (msgs.length > 0) {
+                              useChatStore.setState({ messages: msgs as any[], loading: false });
+                            }
+                          } catch (e) {
+                            console.warn('[ViewThinking] Direct RPC failed:', e);
+                          }
                         }
+                        setShowNewConversation(true);
                       }}
                       className="px-3 py-1.5 rounded-lg text-[11px] border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors flex items-center gap-1"
                       title={t('messages.header.viewThinking')}
@@ -1326,9 +1341,37 @@ export function Messages() {
               const isCompleted = currentSession?.completed;
               return isCompleted ? (
                 <div className="p-4 border-t">
-                  <div className="text-center text-sm text-muted-foreground py-2">
-                    <Check className="h-4 w-4 inline-block mr-1 text-green-500" />
-                    {t('messages.sessionEnded')}
+                  <div className="text-center text-sm text-muted-foreground py-2 space-y-2">
+                    <div>
+                      <Check className="h-4 w-4 inline-block mr-1 text-green-500" />
+                      {t('messages.sessionEnded')}
+                    </div>
+                    {currentSession?.openclawSessionKey && (
+                      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground/60">
+                        <span>{t('messages.rememberHint')}</span>
+                        <button
+                          onClick={async () => {
+                            const ock = currentSession.openclawSessionKey;
+                            if (!ock) return;
+                            try {
+                              const gatewayRpc = useGatewayStore.getState().rpc;
+                              // Use the existing openclawSessionKey to send in the original AI session
+                              await gatewayRpc('chat.send', {
+                                sessionKey: ock,
+                                message: 'Please review this entire conversation and save the important information to your memory files. Include key facts, decisions, agreements, preferences, and any action items that might be useful in future conversations.',
+                                idempotencyKey: crypto.randomUUID(),
+                              }, 120_000);
+                              toast.success(t('messages.rememberSent'));
+                            } catch {
+                              toast.error(t('messages.rememberFailed'));
+                            }
+                          }}
+                          className="px-2.5 py-1 rounded-md text-[11px] font-medium border border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          {t('messages.rememberButton')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -2493,9 +2536,15 @@ function OwnerRequestToast({ question, friendName, type, onReply, onSkip }: {
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSubmit(); }}
                   placeholder={t('messages.ownerRequest.placeholder')}
-                  className="flex-1 px-3 py-2 rounded-lg text-[13px] text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
                   className="flex-1 px-3 py-2 rounded-lg text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 bg-muted border border-border"
                 />
+                <button
+                  onClick={() => onReply('你自己决定')}
+                  className="px-3 py-2 rounded-lg text-[12px] font-semibold transition-all hover:-translate-y-px"
+                  style={{ background: 'rgba(245,158,11,0.15)', color: 'rgba(245,158,11,0.9)', border: '1px solid rgba(245,158,11,0.1)' }}
+                >
+                  {t('messages.ownerRequest.youDecide', '你自己决定')}
+                </button>
                 <button
                   onClick={handleSubmit}
                   disabled={!input.trim()}

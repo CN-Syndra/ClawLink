@@ -22,6 +22,7 @@ import { getProviderService } from '../../services/providers/provider-service';
 import { providerAccountToConfig } from '../../services/providers/provider-store';
 import type { ProviderAccount } from '../../shared/providers/types';
 import { logger } from '../../utils/logger';
+import { readOpenClawProviders } from '../../utils/openclaw-auth';
 
 const legacyProviderRoutesWarned = new Set<string>();
 
@@ -41,7 +42,24 @@ export async function handleProviderRoutes(
   };
 
   if (url.pathname === '/api/provider-vendors' && req.method === 'GET') {
-    sendJson(res, 200, await providerService.listVendors());
+    const vendors = await providerService.listVendors();
+    // Expose providerConfig.models as availableModels for the frontend model selector
+    const enriched = vendors.map((v) => ({
+      ...v,
+      availableModels: v.providerConfig?.models?.map((m) => ({ id: m.id, name: m.name })),
+      providerConfig: undefined, // don't leak backend config to renderer
+    }));
+    sendJson(res, 200, enriched);
+    return true;
+  }
+
+  // Read providers directly from openclaw.json (for syncing external changes)
+  if (url.pathname === '/api/openclaw-providers' && req.method === 'GET') {
+    try {
+      sendJson(res, 200, await readOpenClawProviders());
+    } catch (error) {
+      sendJson(res, 500, { error: String(error) });
+    }
     return true;
   }
 

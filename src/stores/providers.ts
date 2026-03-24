@@ -28,6 +28,7 @@ interface ProviderState {
   accounts: ProviderAccount[];
   vendors: ProviderVendorInfo[];
   defaultAccountId: string | null;
+  openclawProviders: Record<string, unknown>;
   loading: boolean;
   error: string | null;
   
@@ -72,6 +73,7 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
   accounts: [],
   vendors: [],
   defaultAccountId: null,
+  openclawProviders: {},
   loading: false,
   error: null,
   
@@ -81,12 +83,13 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     try {
       const snapshot = await fetchProviderSnapshot();
       
-      set({ 
+      set({
         statuses: snapshot.statuses,
         accounts: snapshot.accounts,
         vendors: snapshot.vendors,
         defaultAccountId: snapshot.defaultAccountId,
-        loading: false 
+        openclawProviders: snapshot.openclawProviders ?? {},
+        loading: false
       });
     } catch (error) {
       set({ error: String(error), loading: false });

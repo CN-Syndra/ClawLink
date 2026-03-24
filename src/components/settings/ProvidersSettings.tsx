@@ -302,6 +302,22 @@ function ProviderCard({
   const typeInfo = PROVIDER_TYPE_INFO.find((t) => t.id === account.vendorId);
   const showModelIdField = shouldShowProviderModelId(typeInfo, devModeUnlocked);
   const canEditModelConfig = Boolean(typeInfo?.showBaseUrl || showModelIdField);
+  const [editGatewayModels, setEditGatewayModels] = useState<Array<{ id: string; provider?: string }>>([]);
+  const [editUseDropdown, setEditUseDropdown] = useState(false);
+  useEffect(() => {
+    if (!isEditing || !showModelIdField) return;
+    hostApiFetch<Array<{ id: string; provider?: string }>>('/api/gateway/models')
+      .then((models) => {
+        if (Array.isArray(models)) {
+          setEditGatewayModels(models.sort((a, b) => {
+            const pa = a.provider || '', pb = b.provider || '';
+            if (pa !== pb) return pa.localeCompare(pb);
+            return a.id.localeCompare(b.id);
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [isEditing, showModelIdField]);
 
   useEffect(() => {
     if (isEditing) {
@@ -481,9 +497,41 @@ function ProviderCard({
                   )}
                   {showModelIdField && (
                     <div>
-                      <div className="text-[11px] text-muted-foreground/80 mb-1">{t('aiProviders.dialog.modelId')}</div>
-                      <Input value={modelId} onChange={(e) => setModelId(e.target.value)} placeholder={typeInfo?.modelIdPlaceholder || 'model-id'}
-                        className="h-8 rounded-lg bg-muted/50 border-foreground/[0.06] text-foreground/80 placeholder:text-muted-foreground/40 font-mono text-[11px] focus-visible:ring-1 focus-visible:ring-white/10" />
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-[11px] text-muted-foreground/80">{t('aiProviders.dialog.modelId')}</div>
+                        {editGatewayModels.length > 0 && (
+                          <button type="button" onClick={() => setEditUseDropdown(!editUseDropdown)}
+                            className="text-[10px] text-blue-500 hover:text-blue-400">
+                            {editUseDropdown ? t('aiProviders.dialog.manualInput', 'Manual input') : t('aiProviders.dialog.selectFromList', 'Select from list')}
+                          </button>
+                        )}
+                      </div>
+                      {vendor?.availableModels && vendor.availableModels.length > 0 ? (
+                        <select
+                          value={modelId}
+                          onChange={(e) => setModelId(e.target.value)}
+                          className="w-full h-8 rounded-lg bg-muted/50 border border-foreground/[0.06] text-foreground/80 font-mono text-[11px] focus:ring-1 focus:ring-white/10 px-2"
+                        >
+                          <option value="">Select model...</option>
+                          {vendor.availableModels.map((m) => (
+                            <option key={m.id} value={m.id}>{m.name} ({m.id})</option>
+                          ))}
+                        </select>
+                      ) : editUseDropdown && editGatewayModels.length > 0 ? (
+                        <select
+                          value={modelId}
+                          onChange={(e) => setModelId(e.target.value)}
+                          className="w-full h-8 rounded-lg bg-muted/50 border border-foreground/[0.06] text-foreground/80 font-mono text-[11px] focus:ring-1 focus:ring-white/10 px-2"
+                        >
+                          <option value="">Select model...</option>
+                          {editGatewayModels.map((m) => (
+                            <option key={`${m.provider}/${m.id}`} value={m.id}>{m.id}{m.provider ? ` · ${m.provider}` : ''}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input value={modelId} onChange={(e) => setModelId(e.target.value)} placeholder={typeInfo?.modelIdPlaceholder || 'model-id'}
+                          className="h-8 rounded-lg bg-muted/50 border-foreground/[0.06] text-foreground/80 placeholder:text-muted-foreground/40 font-mono text-[11px] focus-visible:ring-1 focus-visible:ring-white/10" />
+                      )}
                     </div>
                   )}
                 </div>
@@ -608,6 +656,8 @@ function AddProviderDialog({
   const [showKey, setShowKey] = useState(false);
   const [saving, setSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [gatewayModels, setGatewayModels] = useState<Array<{ id: string; provider?: string }>>([]);
+  const [useModelDropdown, setUseModelDropdown] = useState(false);
 
   // OAuth Flow State
   const [oauthFlowing, setOauthFlowing] = useState(false);
@@ -641,6 +691,22 @@ function AddProviderDialog({
     }
     setAuthMode(selectedVendor.defaultAuthMode === 'api_key' ? 'apikey' : 'oauth');
   }, [selectedVendor, isOAuth, supportsApiKey]);
+
+  // Fetch gateway model catalog for any provider that shows model ID field
+  useEffect(() => {
+    if (!showModelIdField) return;
+    hostApiFetch<Array<{ id: string; provider?: string }>>('/api/gateway/models')
+      .then((models) => {
+        if (Array.isArray(models)) {
+          setGatewayModels(models.sort((a, b) => {
+            const sa = `${a.id} ${a.provider || ''}`.toLowerCase();
+            const sb = `${b.id} ${b.provider || ''}`.toLowerCase();
+            return sa.localeCompare(sb);
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [showModelIdField]);
 
   // Keep refs to the latest values so event handlers see the current dialog state.
   const latestRef = React.useRef({ selectedType, typeInfo, onAdd, onClose, t });
@@ -977,17 +1043,54 @@ function AddProviderDialog({
 
                 {showModelIdField && (
                   <div className="space-y-2">
-                    <Label htmlFor="modelId" className="text-[14px] font-bold text-foreground/80">{t('aiProviders.dialog.modelId')}</Label>
-                    <Input
-                      id="modelId"
-                      placeholder={typeInfo?.modelIdPlaceholder || 'provider/model-id'}
-                      value={modelId}
-                      onChange={(e) => {
-                        setModelId(e.target.value);
-                        setValidationError(null);
-                      }}
-                      className="h-[44px] rounded-xl font-mono text-[13px] bg-white dark:bg-[#1a1a19] border-black/10 dark:border-foreground/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 shadow-sm"
-                    />
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="modelId" className="text-[14px] font-bold text-foreground/80">{t('aiProviders.dialog.modelId')}</Label>
+                      {gatewayModels.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setUseModelDropdown(!useModelDropdown)}
+                          className="text-[11px] text-blue-500 hover:text-blue-400 transition-colors"
+                        >
+                          {useModelDropdown ? t('aiProviders.dialog.manualInput', 'Manual input') : t('aiProviders.dialog.selectFromList', 'Select from list')}
+                        </button>
+                      )}
+                    </div>
+                    {(selectedVendor?.availableModels && selectedVendor.availableModels.length > 0) ? (
+                      <select
+                        id="modelId"
+                        value={modelId}
+                        onChange={(e) => { setModelId(e.target.value); setValidationError(null); }}
+                        className="w-full h-[44px] rounded-xl font-mono text-[13px] bg-white dark:bg-[#1a1a19] border border-black/10 dark:border-foreground/10 focus:ring-2 focus:ring-blue-500/50 shadow-sm px-3"
+                      >
+                        <option value="">{t('aiProviders.dialog.selectModel', 'Select a model...')}</option>
+                        {selectedVendor.availableModels.map((m) => (
+                          <option key={m.id} value={m.id}>{m.name} ({m.id})</option>
+                        ))}
+                      </select>
+                    ) : useModelDropdown && gatewayModels.length > 0 ? (
+                      <select
+                        id="modelId"
+                        value={modelId}
+                        onChange={(e) => { setModelId(e.target.value); setValidationError(null); }}
+                        className="w-full h-[44px] rounded-xl font-mono text-[13px] bg-white dark:bg-[#1a1a19] border border-black/10 dark:border-foreground/10 focus:ring-2 focus:ring-blue-500/50 shadow-sm px-3"
+                      >
+                        <option value="">{t('aiProviders.dialog.selectModel', 'Select a model...')}</option>
+                        {gatewayModels.map((m) => (
+                          <option key={`${m.provider}/${m.id}`} value={m.id}>{m.id}{m.provider ? ` · ${m.provider}` : ''}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Input
+                        id="modelId"
+                        placeholder={typeInfo?.modelIdPlaceholder || 'provider/model-id'}
+                        value={modelId}
+                        onChange={(e) => {
+                          setModelId(e.target.value);
+                          setValidationError(null);
+                        }}
+                        className="h-[44px] rounded-xl font-mono text-[13px] bg-white dark:bg-[#1a1a19] border-black/10 dark:border-foreground/10 focus-visible:ring-2 focus-visible:ring-blue-500/50 shadow-sm"
+                      />
+                    )}
                   </div>
                 )}
                 {/* Device OAuth Trigger — only shown when in OAuth mode */}

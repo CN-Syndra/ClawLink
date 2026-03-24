@@ -93,12 +93,13 @@ function handleGatewayNotification(notification: { method?: string; params?: Rec
   }
 
   if (phase === 'completed' || phase === 'done' || phase === 'finished' || phase === 'end') {
+    const completedSessionKey = p.sessionKey ?? data.sessionKey;
     import('./chat')
       .then(async ({ useChatStore }) => {
-        const state = useChatStore.getState();
-        // wait for loadHistory before clearing sending state;
-        // otherwise the optimistic-message-keep logic in loadHistory would skip since sending=false
-        await state.loadHistory(true);
+        const chatState = useChatStore.getState();
+        // Only update chat UI if the completed event is for the currently viewed session
+        if (completedSessionKey != null && String(completedSessionKey) !== chatState.currentSessionKey) return;
+        await chatState.loadHistory(true);
         if (useChatStore.getState().sending) {
           useChatStore.setState({
             sending: false,
@@ -134,8 +135,10 @@ function handleGatewayChatMessage(data: unknown): void {
           if (typeof content === 'string') text = content;
           else if (Array.isArray(content)) text = content.map((x: any) => x.text || x.content || '').filter(Boolean).join('\n');
           else if (content && typeof content === 'object') text = String((content as any).text || (content as any).content || '');
-          if (text) {
-            useClawLinkStore.setState({ _pendingAIReply: text });
+          if (text && eventSessionKey) {
+            useClawLinkStore.setState((s) => ({
+              _pendingAIReplies: { ...s._pendingAIReplies, [eventSessionKey]: text },
+            }));
           }
         }
       }

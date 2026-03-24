@@ -188,6 +188,8 @@
         "ipcOnly": "IPC only"
       }
     },
+    "showThinking": "Show Thinking Process",
+    "showThinkingDesc": "Show the AI thinking process toggle button in chat toolbar",
     "devMode": "Developer Mode",
     "devModeDesc": "Show developer tools and shortcuts"
   },

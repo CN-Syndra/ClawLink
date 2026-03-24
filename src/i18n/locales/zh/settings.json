@@ -188,6 +188,8 @@
         "ipcOnly": "仅 IPC"
       }
     },
+    "showThinking": "显示思考过程",
+    "showThinkingDesc": "在聊天工具栏中显示「思考过程」切换按钮",
     "devMode": "开发者模式",
     "devModeDesc": "显示开发者工具和快捷方式"
   },

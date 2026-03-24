@@ -307,21 +307,25 @@ export function createAutoReplySlice(set: SetState, get: GetState) {
           try {
             const created = await gatewayRpc<Record<string, unknown>>('sessions.create', {}, 10000);
             openclawKey = created?.sessionKey ? String(created.sessionKey) : null;
-          } catch { /* gateway may not support this method, use fallback */ }
+            console.log(`[ClawLink AutoReply] sessions.create result:`, created ? JSON.stringify(created) : 'null', '→ key:', openclawKey);
+          } catch (e) {
+            console.log(`[ClawLink AutoReply] sessions.create failed:`, e);
+          }
 
           // method 2: generate session key directly (gateway auto-creates on chat.send)
           if (!openclawKey) {
             try {
-              // get prefix from existing sessions, or use default
               const listData = await gatewayRpc<Record<string, unknown>>('sessions.list', {}, 5000);
               const sessions = Array.isArray(listData?.sessions) ? listData.sessions as any[] : [];
+              console.log(`[ClawLink AutoReply] sessions.list returned ${sessions.length} sessions:`, sessions.map((s: any) => s.key));
               const existingKey = sessions.find((s: any) => s.key?.startsWith('agent:'))?.key;
               const prefix = existingKey ? existingKey.split(':').slice(0, 2).join(':') : 'agent:main';
               openclawKey = `${prefix}:session-${Date.now()}`;
-            } catch {
-              // sessions.list failed too, use default prefix
+            } catch (e) {
+              console.log(`[ClawLink AutoReply] sessions.list failed:`, e);
               openclawKey = `agent:main:session-${Date.now()}`;
             }
+            console.log(`[ClawLink AutoReply] Generated local key: ${openclawKey}`);
           }
 
           if (!openclawKey) {
@@ -456,11 +460,22 @@ export function createAutoReplySlice(set: SetState, get: GetState) {
             );
           } else {
             // text only: send via RPC
-            await gatewayRpc<Record<string, unknown>>(
+            console.log(`[ClawLink AutoReply] chat.send sessionKey="${openclawKey}"`);
+            const sendResult = await gatewayRpc<Record<string, unknown>>(
               'chat.send',
               { sessionKey: openclawKey, message: fullMessage, deliver: false, idempotencyKey: crypto.randomUUID() },
               120_000,
             );
+            console.log(`[ClawLink AutoReply] chat.send response keys:`, sendResult ? Object.keys(sendResult) : 'null', 'sessionKey:', sendResult?.sessionKey, 'runId:', sendResult?.runId);
+            // Gateway may return the actual session key used (which can differ from our generated key)
+            const actualSessionKey = sendResult?.sessionKey ? String(sendResult.sessionKey) : null;
+            if (actualSessionKey && actualSessionKey !== openclawKey) {
+              console.log(`[ClawLink AutoReply] Gateway returned session "${actualSessionKey}" instead of "${openclawKey}", updating.`);
+              openclawKey = actualSessionKey;
+              if (clawLinkSession) {
+                await updateClawLinkSessionOpenCLAWSessionKey(clawLinkSession.key, openclawKey);
+              }
+            }
           }
           // mark session as having sent full context
           if (needsFullContext) {
@@ -508,14 +523,6 @@ export function createAutoReplySlice(set: SetState, get: GetState) {
             });
             break;
           }
-          // compat: also check global _pendingAIReply
-          const globalPushed = get()._pendingAIReply;
-          if (globalPushed) {
-            replyContent = globalPushed;
-            set({ _pendingAIReply: null });
-            break;
-          }
-
           // fallback: check history every 3 polls (~9s) to reduce requests
           if (attempt % 3 !== 0) continue;
           try {

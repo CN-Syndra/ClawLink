@@ -299,6 +299,7 @@ export function Settings() {
     proxyEnabled, proxyServer, proxyHttpServer, proxyHttpsServer, proxyAllServer, proxyBypassRules,
     setProxyEnabled, setProxyServer, setProxyHttpServer, setProxyHttpsServer, setProxyAllServer, setProxyBypassRules,
     devModeUnlocked, setDevModeUnlocked,
+    showThinkingToggle, setShowThinkingToggle,
   } = useSettingsStore();
 
   const { status: gatewayStatus, restart: restartGateway } = useGatewayStore();
@@ -561,6 +562,13 @@ export function Settings() {
                     </button>
                   </div>
                 )}
+
+                <div className="h-px bg-muted/60 my-3" />
+
+                {/* Show thinking toggle */}
+                <Row title={t('advanced.showThinking', 'Show Thinking Process')} desc={t('advanced.showThinkingDesc', 'Show the AI thinking process toggle button in chat toolbar')}>
+                  <Switch checked={showThinkingToggle} onCheckedChange={setShowThinkingToggle} />
+                </Row>
 
                 <div className="h-px bg-muted/60 my-3" />
 

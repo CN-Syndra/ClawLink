@@ -20,6 +20,7 @@ import { autoInstallCliIfNeeded, generateCompletionCache, installCompletionToPro
 import { isQuitting, setQuitting } from './app-state';
 import { applyProxySettings } from './proxy';
 import { performUpgradeCleanupIfNeeded, clearSessionStorage } from '../utils/upgrade-cleanup';
+import { restoreOriginalGatewayToken } from '../utils/openclaw-auth';
 import { getSetting } from '../utils/store';
 import { ensureBuiltinSkillsInstalled } from '../utils/skill-config';
 import { startHostApiServer } from '../api/server';
@@ -389,6 +390,11 @@ app.on('before-quit', () => {
   setQuitting();
   hostEventBus.closeAll();
   hostApiServer?.close();
+  // Restore the user's original gateway token so their local OpenClaw
+  // instance remains accessible after ClawLink exits.
+  void restoreOriginalGatewayToken().catch((err) => {
+    logger.warn('Failed to restore original gateway token:', err);
+  });
   // Fire-and-forget: do not await gatewayManager.stop() here.
   // Awaiting inside before-quit can stall Electron's quit sequence.
   void gatewayManager.stop().catch((err) => {

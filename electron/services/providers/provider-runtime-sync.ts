@@ -24,10 +24,16 @@ type RuntimeProviderSyncContext = {
   api: string;
 };
 
-export function getOpenClawProviderKey(type: string, providerId: string): string {
+export function getOpenClawProviderKey(type: string, providerId: string, label?: string): string {
   if (type === 'custom' || type === 'ollama') {
+    // Prefer a clean key derived from the user-supplied label (e.g. "DeepSeek" → "deepseek")
+    // so openclaw.json reads naturally.  Fall back to the old UUID-based suffix.
+    if (label) {
+      const clean = label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      if (clean) return clean;
+    }
     const suffix = providerId.replace(/-/g, '').slice(0, 8);
-    return `${type}-${suffix}`;
+    return `custom-${suffix}`;
   }
   if (type === 'minimax-portal-cn') {
     return 'minimax-portal';
@@ -40,7 +46,7 @@ async function resolveRuntimeProviderKey(config: ProviderConfig): Promise<string
   if (config.type === 'google' && account?.authMode === 'oauth_browser') {
     return GOOGLE_OAUTH_RUNTIME_PROVIDER;
   }
-  return getOpenClawProviderKey(config.type, config.id);
+  return getOpenClawProviderKey(config.type, config.id, account?.label || config.name);
 }
 
 async function isGoogleBrowserOAuthProvider(config: ProviderConfig): Promise<boolean> {
@@ -231,11 +237,20 @@ async function resolveRuntimeSyncContext(config: ProviderConfig): Promise<Runtim
 async function syncRuntimeProviderConfig(
   config: ProviderConfig,
   context: RuntimeProviderSyncContext,
+  apiKey?: string,
 ): Promise<void> {
+  // For custom/ollama providers, also write apiKey directly into openclaw.json
+  // so the gateway can find it (matches official OpenClaw config format).
+  let resolvedApiKey: string | undefined;
+  if (config.type === 'custom' || config.type === 'ollama') {
+    resolvedApiKey = apiKey !== undefined ? (apiKey.trim() || undefined) : (await getApiKey(config.id)) ?? undefined;
+  }
+
   await syncProviderConfigToOpenClaw(context.runtimeProviderKey, config.model, {
     baseUrl: config.baseUrl || context.meta?.baseUrl,
     api: context.api,
     apiKeyEnv: context.meta?.apiKeyEnv,
+    apiKey: resolvedApiKey,
     headers: context.meta?.headers,
   });
 }
@@ -273,7 +288,7 @@ async function syncProviderToRuntime(
   }
 
   await syncProviderSecretToRuntime(config, context.runtimeProviderKey, apiKey);
-  await syncRuntimeProviderConfig(config, context);
+  await syncRuntimeProviderConfig(config, context, apiKey);
   await syncCustomProviderAgentModel(config, context.runtimeProviderKey, apiKey);
   return context;
 }

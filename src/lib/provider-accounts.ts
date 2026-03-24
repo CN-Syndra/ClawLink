@@ -6,11 +6,19 @@ import type {
   ProviderWithKeyInfo,
 } from '@/lib/providers';
 
+export interface OpenClawProviderEntry {
+  baseUrl?: string;
+  api?: string;
+  apiKey?: string;
+  models?: Array<{ id: string; name: string }>;
+}
+
 export interface ProviderSnapshot {
   accounts: ProviderAccount[];
   statuses: ProviderWithKeyInfo[];
   vendors: ProviderVendorInfo[];
   defaultAccountId: string | null;
+  openclawProviders?: Record<string, OpenClawProviderEntry>;
 }
 
 export interface ProviderListItem {
@@ -20,11 +28,12 @@ export interface ProviderListItem {
 }
 
 export async function fetchProviderSnapshot(): Promise<ProviderSnapshot> {
-  const [accounts, statuses, vendors, defaultInfo] = await Promise.all([
+  const [accounts, statuses, vendors, defaultInfo, openclawProviders] = await Promise.all([
     hostApiFetch<ProviderAccount[]>('/api/provider-accounts'),
     hostApiFetch<ProviderWithKeyInfo[]>('/api/providers'),
     hostApiFetch<ProviderVendorInfo[]>('/api/provider-vendors'),
     hostApiFetch<{ accountId: string | null }>('/api/provider-accounts/default'),
+    hostApiFetch<Record<string, OpenClawProviderEntry>>('/api/openclaw-providers').catch(() => ({})),
   ]);
 
   return {
@@ -32,6 +41,7 @@ export async function fetchProviderSnapshot(): Promise<ProviderSnapshot> {
     statuses,
     vendors,
     defaultAccountId: defaultInfo.accountId,
+    openclawProviders,
   };
 }
 

@@ -104,7 +104,7 @@ export function buildGatewayConnectFrame(options: {
 }): { connectId: string; frame: Record<string, unknown> } {
   const connectId = `connect-${Date.now()}`;
   const role = 'operator';
-  const scopes = ['operator.admin'];
+  const scopes = ['operator.admin', 'operator.read'];
   const signedAtMs = Date.now();
   const clientId = 'gateway-client';
   const clientMode = 'ui';

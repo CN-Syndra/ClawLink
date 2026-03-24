@@ -36,6 +36,7 @@ interface SettingsState {
   // UI State
   sidebarCollapsed: boolean;
   devModeUnlocked: boolean;
+  showThinkingToggle: boolean;
 
   // Setup
   setupComplete: boolean;
@@ -60,6 +61,7 @@ interface SettingsState {
   setAutoDownloadUpdate: (value: boolean) => void;
   setSidebarCollapsed: (value: boolean) => void;
   setDevModeUnlocked: (value: boolean) => void;
+  setShowThinkingToggle: (value: boolean) => void;
   markSetupComplete: () => void;
   resetSettings: () => void;
 }
@@ -88,6 +90,7 @@ const defaultSettings = {
   autoDownloadUpdate: false,
   sidebarCollapsed: false,
   devModeUnlocked: false,
+  showThinkingToggle: false,
   setupComplete: false,
 };
 
@@ -149,6 +152,13 @@ export const useSettingsStore = create<SettingsState>()(
       setAutoDownloadUpdate: (autoDownloadUpdate) => set({ autoDownloadUpdate }),
       setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
       setDevModeUnlocked: (devModeUnlocked) => set({ devModeUnlocked }),
+      setShowThinkingToggle: (showThinkingToggle) => {
+        set({ showThinkingToggle });
+        void hostApiFetch('/api/settings/showThinkingToggle', {
+          method: 'PUT',
+          body: JSON.stringify({ value: showThinkingToggle }),
+        }).catch(() => {});
+      },
       markSetupComplete: () => set({ setupComplete: true }),
       resetSettings: () => set(defaultSettings),
     }),

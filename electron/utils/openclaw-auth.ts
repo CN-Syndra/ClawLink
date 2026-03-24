@@ -157,6 +157,24 @@ async function writeOpenClawJson(config: Record<string, unknown>): Promise<void>
 // ── Exported Functions (all async) ───────────────────────────────
 
 /**
+ * Read providers from openclaw.json (models.providers section).
+ * Returns the raw providers map so the caller can detect externally-configured
+ * providers (e.g. added via `openclaw config` CLI) that ClawLink doesn't know about.
+ */
+export async function readOpenClawProviders(): Promise<Record<string, Record<string, unknown>>> {
+  const config = await readOpenClawJson();
+  const models = (config.models || {}) as Record<string, unknown>;
+  const providers = (models.providers || {}) as Record<string, unknown>;
+  const result: Record<string, Record<string, unknown>> = {};
+  for (const [key, value] of Object.entries(providers)) {
+    if (value && typeof value === 'object') {
+      result[key] = value as Record<string, unknown>;
+    }
+  }
+  return result;
+}
+
+/**
  * Save an OAuth token to OpenClaw's auth-profiles.json.
  */
 export async function saveOAuthTokenToOpenClaw(
@@ -443,6 +461,7 @@ interface RuntimeProviderConfigOverride {
   baseUrl?: string;
   api?: string;
   apiKeyEnv?: string;
+  apiKey?: string;
   headers?: Record<string, string>;
   authHeader?: boolean;
 }
@@ -451,6 +470,7 @@ type ProviderEntryBuildOptions = {
   baseUrl: string;
   api: string;
   apiKeyEnv?: string;
+  apiKey?: string;
   headers?: Record<string, string>;
   authHeader?: boolean;
   modelIds?: string[];
@@ -519,7 +539,8 @@ function upsertOpenClawProviderEntry(
     api: options.api,
     models: mergeProviderModels(registryModels, existingModels, runtimeModels),
   };
-  if (options.apiKeyEnv) nextProvider.apiKey = options.apiKeyEnv;
+  if (options.apiKey) nextProvider.apiKey = options.apiKey;
+  else if (options.apiKeyEnv) nextProvider.apiKey = options.apiKeyEnv;
   if (options.headers && Object.keys(options.headers).length > 0) {
     nextProvider.headers = options.headers;
   } else {
@@ -583,6 +604,7 @@ export async function syncProviderConfigToOpenClaw(
       baseUrl: override.baseUrl,
       api: override.api,
       apiKeyEnv: override.apiKeyEnv,
+      apiKey: override.apiKey,
       headers: override.headers,
       modelIds: modelId ? [modelId] : [],
     });
@@ -704,6 +726,49 @@ export async function getActiveOpenClawProviders(): Promise<Set<string>> {
   }
 
   return activeProviders;
+}
+
+let _originalGatewayToken: string | null = null;
+
+/**
+ * Read and save the original gateway token from openclaw.json
+ * so it can be restored when ClawLink exits.
+ */
+export async function saveOriginalGatewayToken(): Promise<void> {
+  try {
+    const config = await readOpenClawJson();
+    const gateway = config.gateway as Record<string, unknown> | undefined;
+    const auth = gateway?.auth as Record<string, unknown> | undefined;
+    const token = auth?.token;
+    if (typeof token === 'string' && !token.startsWith('clawlink-')) {
+      _originalGatewayToken = token;
+    }
+  } catch { /* ignore */ }
+}
+
+/**
+ * Restore the original gateway token in openclaw.json.
+ * Called on ClawLink exit so the user can still access their
+ * local OpenClaw instance independently.
+ */
+export async function restoreOriginalGatewayToken(): Promise<void> {
+  try {
+    const config = await readOpenClawJson();
+    const gateway = (config.gateway || {}) as Record<string, unknown>;
+    const auth = (gateway.auth || {}) as Record<string, unknown>;
+
+    if (_originalGatewayToken) {
+      // Restore the user's original token
+      auth.token = _originalGatewayToken;
+    } else {
+      // No original token — remove ClawLink's token so openclaw uses its own default
+      delete auth.token;
+      delete auth.mode;
+    }
+    gateway.auth = auth;
+    config.gateway = gateway;
+    await writeOpenClawJson(config);
+  } catch { /* ignore on exit */ }
 }
 
 /**

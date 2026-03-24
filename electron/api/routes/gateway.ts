@@ -22,6 +22,20 @@ export async function handleGatewayRoutes(
     return true;
   }
 
+  // Fetch all available models from the gateway (for model selector dropdowns)
+  if (url.pathname === '/api/gateway/models' && req.method === 'GET') {
+    try {
+      const result = await ctx.gatewayManager.rpc<{ models?: Array<{ id: string; provider?: string; name?: string }> }>(
+        'models.list', {}, 10000
+      );
+      const models = result?.models || [];
+      sendJson(res, 200, models);
+    } catch (error) {
+      sendJson(res, 200, []); // return empty on error instead of failing
+    }
+    return true;
+  }
+
   if (url.pathname === '/api/gateway/status' && req.method === 'GET') {
     sendJson(res, 200, ctx.gatewayManager.getStatus());
     return true;
